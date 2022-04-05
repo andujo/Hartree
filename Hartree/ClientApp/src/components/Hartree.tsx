@@ -1,93 +1,133 @@
 import * as React from 'react';
 import { connect } from 'react-redux';
 import { RouteComponentProps } from 'react-router';
-import { Link } from 'react-router-dom';
 import { ApplicationState } from '../store';
-import * as WeatherForecastsStore from '../store/WeatherForecasts';
+import * as HartreeStore from '../store/HartreeStore';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 // At runtime, Redux will merge together...
-type WeatherForecastProps =
-  WeatherForecastsStore.WeatherForecastsState // ... state we've requested from the Redux store
-  & typeof WeatherForecastsStore.actionCreators // ... plus action creators we've requested
-  & RouteComponentProps<{ startDateIndex: string }>; // ... plus incoming routing parameters
+type HartreeProps =
+  HartreeStore.HartreeState // ... state we've requested from the Redux store
+  & typeof HartreeStore.actionCreators // ... plus action creators we've requested
+  & RouteComponentProps<{ ticker: string }>; // ... plus incoming routing parameters
 
 
-class App extends React.PureComponent<WeatherForecastProps> {
+class App extends React.PureComponent<HartreeProps> {
   // This method is called when the component is first added to the document
   public componentDidMount() {
-    this.ensureDataFetched();
-  }
-
-  // This method is called when the route parameters change
-  public componentDidUpdate() {
-    this.ensureDataFetched();
+    this.ensureDataFetched('^GSPC');
   }
 
   public render() {
     return (
       <React.Fragment>
-        <h1 id="tabelLabel">Hartree system</h1>
-        <p>UI of Hartree</p>
-        
-        <label htmlFor='ticker'>Ticker:</label>
-        <input type='text' id='ticker'></input>
-
+        <h1 id="tabelLabel">Hartree System</h1>
+        <p>Hartree's UI</p>
+            <select name="Ticker" onChange={(d) => {this.ensureDataFetched(d.target.value)} }>
+                <option value="^GSPC">S&P 500</option>
+                <option value="^DJI">Dow Jones Industrial Average</option>
+                <option value="^IXIC">NASDAQ Composite</option>
+                <option value="AAPL">Apple Inc.</option>
+                <option value="TSLA">Tesla, Inc.</option>
+                <option value="MSFT">Microsoft Corportation</option>
+                <option value="SBUX">Starbucks</option>
+                <option value="TWTR">Twitter, inc.</option>
+                <option value="FB">Meta Platofrms, Inc.</option>
+        </select>
         <label htmlFor='begin'>Begin:</label>
-        <input type='number' id='begin'></input>
+        <input type='number' id='begin' onChange={(e) => {this.props.setLeftPoint(e.target.valueAsNumber)}}></input>
 
         <label htmlFor='end'>End:</label>
-        <input type='number' id='end'></input>
-        {this.renderForecastsTable()}
-        {this.renderPagination()}
+        <input type='number' id='end' onChange={(e) => {this.props.setRightPoint(e.target.valueAsNumber)}}></input>           
+        <button onClick={() => {this.getOutputData()}}>Submit</button>
+        {this.renderTable()}
+        {this.chart()}
+        
       </React.Fragment>
     );
   }
 
-  private ensureDataFetched() {
-    const startDateIndex = parseInt(this.props.match.params.startDateIndex, 10) || 0;
-    this.props.requestWeatherForecasts(startDateIndex);
+    private ensureDataFetched(ticker: string) {
+      this.props.requestHartree(ticker);
+    }
+
+    private getOutputData() {
+      //validate 
+      if(this.props.data[0].close > this.props.leftPoint) {
+        alert('puto');
+        return;
+      }
+      if(this.props.data[11].close > this.props.rightPoint) {
+        alert('puto x2');
+        return;
+      }
+      this.props.requestHartreeOutput(this.props.ticker, this.props.leftPoint, this.props.rightPoint);
+    }
+    
+  private chart() {
+    if(Object.keys(this.props.dataChart).length > 0 && this.props.dataChart.constructor === Object) {
+      const chartOptions = {
+        responsive: true,
+        plugins: {
+          legend: {
+            position: 'top' as const,
+          },
+          title: {
+            display: true,
+            text: 'Hartee Chart',
+          },
+        },
+      };
+
+      return (<Line options={chartOptions} data={this.props.dataChart} />);
+    }
   }
 
-  private renderForecastsTable() {
+  private renderTable() {
     return (
-      <table className='table table-striped' aria-labelledby="tabelLabel">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Temp. (C)</th>
-            <th>Temp. (F)</th>
-            <th>Summary</th>
-          </tr>
-        </thead>
-        <tbody>
-          {this.props.forecasts.map((forecast: WeatherForecastsStore.WeatherForecast) =>
-            <tr key={forecast.date}>
-              <td>{forecast.date}</td>
-              <td>{forecast.temperatureC}</td>
-              <td>{forecast.temperatureF}</td>
-              <td>{forecast.summary}</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+            <table className='table table-striped' aria-labelledby="tabelLabel">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Close Price</th>
+                        <th>Output</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {this.props.data.map((data: HartreeStore.HartreeData) =>
+                        <tr>
+                            <td>{data.dateTime}</td>
+                            <td>{data.close}</td>
+                            <td>{data.output}</td>
+                        </tr>
+                    )}
+                </tbody>
+            </table>
     );
-  }
-
-  private renderPagination() {
-    const prevStartDateIndex = (this.props.startDateIndex || 0) - 5;
-    const nextStartDateIndex = (this.props.startDateIndex || 0) + 5;
-
-    return (
-      <div className="d-flex justify-content-between">
-        <Link className='btn btn-outline-secondary btn-sm' to={`/fetch-data/${prevStartDateIndex}`}>Previous</Link>
-        {this.props.isLoading && <span>Loading...</span>}
-        <Link className='btn btn-outline-secondary btn-sm' to={`/fetch-data/${nextStartDateIndex}`}>Next</Link>
-      </div>
-    );
-  }
+}
 }
 
 export default connect(
-  (state: ApplicationState) => state.weatherForecasts, // Selects which state properties are merged into the component's props
-  WeatherForecastsStore.actionCreators // Selects which action creators are merged into the component's props
+  (state: ApplicationState) => state.hartree, // Selects which state properties are merged into the component's props
+  HartreeStore.actionCreators // Selects which action creators are merged into the component's props
 )(App as any); // eslint-disable-line @typescript-eslint/no-explicit-any
