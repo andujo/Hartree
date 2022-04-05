@@ -48,11 +48,22 @@ class App extends React.PureComponent<HartreeProps> {
                 <option value="^DJI">Dow Jones Industrial Average</option>
                 <option value="^IXIC">NASDAQ Composite</option>
                 <option value="AAPL">Apple Inc.</option>
+                <option value="PYPL">Paypal</option>
+                <option value="ROKU">Roku, Inc.</option>
                 <option value="TSLA">Tesla, Inc.</option>
                 <option value="MSFT">Microsoft Corportation</option>
+                <option value="GOOG">Google</option>
+                <option value="AMZN">Amazon.com, Inc.</option>
+                <option value="NVDA">Nvidia Corporation</option>
                 <option value="SBUX">Starbucks</option>
-                <option value="TWTR">Twitter, inc.</option>
+                <option value="TWTR">Twitter, Inc.</option>
                 <option value="FB">Meta Platofrms, Inc.</option>
+                <option value="NFLX">Netflix, Inc.</option>
+                <option value="ORCL">Oracle Corporation</option>
+                <option value="F">Ford Motor Company</option>
+                <option value="RBLX">Roblox Corporation</option>
+                <option value="BTC-USD">Bitcoin - USD</option>
+                <option value="CRO-USD">Crypto.com - USD</option>
         </select>
         <label htmlFor='begin'>Begin:</label>
         <input type='number' id='begin' onChange={(e) => {this.props.setLeftPoint(e.target.valueAsNumber)}}></input>
@@ -74,11 +85,11 @@ class App extends React.PureComponent<HartreeProps> {
     private getOutputData() {
       //validate 
       if(this.props.data[0].close > this.props.leftPoint) {
-        alert('puto');
+        alert('Begin point must be bigger than the first value on the input table');
         return;
       }
       if(this.props.data[11].close > this.props.rightPoint) {
-        alert('puto x2');
+        alert('End point must be bigger than the last value on the input table');
         return;
       }
       this.props.requestHartreeOutput(this.props.ticker, this.props.leftPoint, this.props.rightPoint);
@@ -116,8 +127,8 @@ class App extends React.PureComponent<HartreeProps> {
                 <tbody>
                     {this.props.data.map((data: HartreeStore.HartreeData) =>
                         <tr>
-                            <td>{data.dateTime}</td>
-                            <td>{data.close}</td>
+                            <td>{data.dateTime.substring(0,7)}</td>
+                            <td>{data.close.toLocaleString('en-US', {style: 'currency',currency: 'USD',}) }</td>
                             <td>{data.output}</td>
                         </tr>
                     )}

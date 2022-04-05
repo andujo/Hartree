@@ -23,7 +23,7 @@ export interface HartreeData {
     close: number,
     volume: number,
     adjustedClose: number,
-    output: number
+    output: string
 }
 
 export interface HartreeOutputData {
@@ -139,7 +139,7 @@ export const reducer: Reducer<HartreeState> = (state: HartreeState | undefined, 
 
     function fillDataOutput(data: HartreeData[], dataOutput: HartreeOutputData[]) {
         for(let i = 0; i < data.length; i++) {
-            data[i].output = dataOutput[i].value;
+            data[i].output = dataOutput[i].value.toLocaleString('en-US', {style: 'currency',currency: 'USD',});
         }
         return data;
     }
